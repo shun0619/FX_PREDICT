@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -21,8 +22,25 @@ from .features import (FEATURE_LABELS, HTF_MAP, MIN_DAYS, active_features,
 MODEL_DIR = Path(__file__).resolve().parent.parent / "models"
 
 
-def load_extras(symbol: str, interval: str, days: int) -> dict:
-    """上位足OHLCとマクロ特徴量を取得(失敗しても None で続行)。"""
+# 上位足とマクロの短期キャッシュ。
+# 画面は数秒おきにポーリングするが、上位足(1時間足・日足など)は
+# その間に変化しないため、毎回組み立て直すのは無駄。
+_extras_cache: dict[tuple, tuple[float, dict]] = {}
+_EXTRAS_TTL = 60.0
+
+
+def load_extras(symbol: str, interval: str, days: int,
+                use_cache: bool = True) -> dict:
+    """上位足OHLCとマクロ特徴量を取得(失敗しても None で続行)。
+
+    use_cache=False は学習時に使う(必ず最新を取り直す)。
+    """
+    key = (symbol, interval, days)
+    if use_cache:
+        hit = _extras_cache.get(key)
+        if hit and time.time() - hit[0] < _EXTRAS_TTL:
+            return hit[1]
+
     extras: dict = {}
     for i, htf in enumerate(HTF_MAP.get(interval, [])[:2], 1):
         try:
@@ -34,6 +52,9 @@ def load_extras(symbol: str, interval: str, days: int) -> dict:
         extras["macro"] = macro.features_for(symbol)
     except Exception:
         extras["macro"] = None
+
+    if use_cache:
+        _extras_cache[key] = (time.time(), extras)
     return extras
 
 PARAMS = {

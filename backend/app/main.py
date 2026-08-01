@@ -110,7 +110,8 @@ def _retrain_all() -> str:
         try:
             df = gmo.drop_incomplete(
                 gmo.fetch_klines(symbol, interval, TRAIN_DAYS[tf]), interval)
-            extras = model.load_extras(symbol, interval, TRAIN_DAYS[tf])
+            extras = model.load_extras(symbol, interval, TRAIN_DAYS[tf],
+                                       use_cache=False)
             meta = model.train(df, symbol, interval, extras=extras)
             results.append(f"{symbol} {tf}: WF精度 {meta.get('wf_mean_accuracy')}")
         except Exception as e:
@@ -412,7 +413,7 @@ def train(symbol: str = "USD_JPY", interval: str = "15m",
           days: int | None = None):
     d = days or TRAIN_DAYS[interval]
     df = gmo.drop_incomplete(_load(symbol, interval, d), gmo.INTERVAL_MAP[interval])
-    extras = model.load_extras(symbol, gmo.INTERVAL_MAP[interval], d)
+    extras = model.load_extras(symbol, gmo.INTERVAL_MAP[interval], d, use_cache=False)
     try:
         meta = model.train(df, symbol, gmo.INTERVAL_MAP[interval], extras=extras)
     except ValueError as e:

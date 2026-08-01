@@ -20,7 +20,7 @@ def run(symbol: str, tf: str, days: int | None):
     df = gmo.drop_incomplete(
         gmo.fetch_klines(symbol, gmo.INTERVAL_MAP[tf], days), gmo.INTERVAL_MAP[tf])
     print(f"   {len(df)}本取得 ({df.index[0]} - {df.index[-1]})")
-    extras = model.load_extras(symbol, gmo.INTERVAL_MAP[tf], days)
+    extras = model.load_extras(symbol, gmo.INTERVAL_MAP[tf], days, use_cache=False)
     meta = model.train(df, symbol, gmo.INTERVAL_MAP[tf], extras=extras)
     print(json.dumps({k: meta[k] for k in
                       ("train_rows", "wf_mean_accuracy", "wf_mean_auc",
