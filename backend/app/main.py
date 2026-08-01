@@ -31,6 +31,24 @@ def _interval(tf: str) -> str:
     return gmo.INTERVAL_MAP[tf]
 
 
+def _require_model(symbol: str, tf: str) -> None:
+    """モデルの有無を先に確認する。
+
+    データ取得より先に判定しないと、clone直後(キャッシュが空)の環境で
+    数百リクエストのダウンロードを終えてから「モデル未学習」を返すことになり、
+    その間フロントエンドはタイムアウトして socket hang up になる。
+    """
+    if symbol not in gmo.SYMBOLS:
+        raise HTTPException(400, f"symbol must be one of {gmo.SYMBOLS}")
+    if tf not in gmo.INTERVAL_MAP:
+        raise HTTPException(400, f"interval must be one of {INTERVALS}")
+    if model.load(symbol, gmo.INTERVAL_MAP[tf]) is None:
+        raise HTTPException(
+            409, f"{symbol} {tf} のモデルがありません。"
+                 "backend フォルダで python train.py --all を実行してください "
+                 "(初回は価格データの取得を含め10〜20分かかります)")
+
+
 def _load(symbol: str, tf: str, days: int | None = None):
     if symbol not in gmo.SYMBOLS:
         raise HTTPException(400, f"symbol must be one of {gmo.SYMBOLS}")
@@ -309,6 +327,7 @@ def chart_data(symbol: str = "USD_JPY", interval: str = "15m",
 
 @app.get("/api/predict")
 def predict(symbol: str = "USD_JPY", interval: str = "15m"):
+    _require_model(symbol, interval)
     # 確定足のみで予測(進行中の足は学習時と条件が異なるため使わない)
     df = gmo.drop_incomplete(_load(symbol, interval), gmo.INTERVAL_MAP[interval])
     if len(df) < 100:
@@ -331,6 +350,7 @@ def predict(symbol: str = "USD_JPY", interval: str = "15m"):
 @app.get("/api/entry-plan")
 def entry_plan(symbol: str = "USD_JPY", interval: str = "15m"):
     """エントリー適正度スコアと損切り・利確目安。"""
+    _require_model(symbol, interval)
     df = gmo.drop_incomplete(_load(symbol, interval), gmo.INTERVAL_MAP[interval])
     if len(df) < 100:
         raise HTTPException(502, "確定足が不足しています")
@@ -365,6 +385,7 @@ def history(symbol: str = "USD_JPY", interval: str = "15m", limit: int = 100):
 def backtest(symbol: str = "USD_JPY", interval: str = "15m",
              days: int | None = None, threshold: float = 0.55,
              spread_pips: float = 0.2, lot: float = 10_000):
+    _require_model(symbol, interval)
     d = days or TRAIN_DAYS[interval]
     iv = gmo.INTERVAL_MAP[interval]
     df = gmo.drop_incomplete(_load(symbol, interval, d), iv)

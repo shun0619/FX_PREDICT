@@ -59,6 +59,23 @@ npm start
 
 ブラウザで http://localhost:3000 を開く。終了は各ターミナルで Ctrl+C。
 
+## clone した直後にやること
+
+学習済みモデルと価格キャッシュは `.gitignore` で除外されているため、
+clone しただけでは予測できない。**フロントエンドを起動する前に**必ず学習する。
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/Scripts/activate      # Windows(Git Bash)
+pip install -r requirements.txt
+python train.py --all              # 初回は10〜20分。価格データの取得を含む
+```
+
+これを飛ばして画面を開くと、モデルが無いため各APIが409を返す
+(以前は価格データを数分ダウンロードしてから失敗し、
+フロントエンドが `socket hang up` になっていた)。
+
 ## 最初にやること: モデル学習
 
 「AI予測」ページの **モデル再学習** ボタンを押す(またはCLI):
