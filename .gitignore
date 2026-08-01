@@ -1,0 +1,52 @@
+# ===== 認証情報 (最優先。絶対にコミットしない) =====
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+credentials.json
+
+# ===== Python =====
+backend/.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# ===== アプリのデータ (個人の取引記録・設定。再生成可能) =====
+backend/data/
+backend/models/
+
+# 書き込み途中の一時ファイル
+*.tmp
+
+# ===== Node / Next.js =====
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/next-env.d.ts
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ===== エディタ・OS =====
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Officeの一時ファイル
+~$*
